@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tictac-ingress
+  namespace: tictac
+  annotations:
+    # 1. Tells the AWS Load Balancer Controller to handle this
+    kubernetes.io/ingress.class: alb
+    # 2. Scheme can be 'internet-facing' or 'internal'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # 3. Target type 'ip' is recommended for EKS/Fargate/Nodes
+    alb.ingress.kubernetes.io/target-type: ip
+    # 4. (Optional) Health check path matching your probe
+    alb.ingress.kubernetes.io/healthcheck-path: /
+spec:
+  rules:
+  - host: tictacgame.com # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tictac
+            port:
+              number: 80

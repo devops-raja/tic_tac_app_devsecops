@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tictac
+  namespace: tictac
+spec:
+  selector:
+    app: game
+  type: ClusterIP
+  ports:
+  - name: tictac
+    protocol: TCP
+    port: 80
+    targetPort: 80
+---
