@@ -78,11 +78,11 @@ jobs:
       
       - name: Update Deployment YAML
         run: |
-          # Use the tag passed from the build job
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           TAG="${{ needs.build-and-push.outputs.image_tag }}"
           
           # Update the file
-          sed -i "s|image: .*|image: ghcr.io/${{ github.repository }}:$TAG|g" k8s/deployment.yaml
+          sed -i "s|image: .*|image: ghcr.io/$REPO_LOWER:$TAG |g" k8s/deployment.yaml
           
           # Configure Git
           git config user.name "github-actions[bot]"
