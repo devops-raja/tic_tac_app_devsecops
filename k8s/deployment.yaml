@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: tictac
-        image: ghcr.io/devops-raja/tic_tac_app_devsecops:16003740785a17cc93fec1345efd480d4502b610-28151797577 
+        image: ghcr.io/devops-raja/tic_tac_app_devsecops:9abf86bc16da5d57fe9d798a094af02ea03a27a7-28154624652 
         imagePullPolicy: Always
         resources:
           requests:
