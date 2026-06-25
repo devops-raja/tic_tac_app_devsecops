@@ -54,4 +54,10 @@ spec:
           name: tictac
       restartPolicy: Always
       imagePullSecrets:
-      - name: ghcr-secret # This tells K8s to use the secret we just made
+      - name: ghcr-secret # need to create  a k8 secret for image pulling from private ghcr
+      
+
+      ##steps: 
+      # create a namespace "tictac" in k8 cluster
+      # install argo cd in the cluster and config the app
+      # creata a secret in k8 cluster in tictac ns
