@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: tictac
-        image: myjob:latest
+        image: ghcr.io/Devops-Raja/repo:latest
         imagePullPolicy: Always
         resources:
           requests:

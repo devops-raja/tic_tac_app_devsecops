@@ -1,0 +1,95 @@
+name: tictacgame CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js (Crucial for reproducibility)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm' # This makes your pipeline much faster on subsequent runs
+      
+      - name: Install dependencies
+        run: npm ci # 'ci' is safer than 'install' for production
+      
+      - name: Unit Tests
+        run: npm test
+        
+      - name: Static Code Analysis (Lint)
+        run: npm run lint
+
+  build-and-push:
+    needs: test-and-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to commit image tag back to repo
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Extract Metadata (Unique Tag)
+        id: meta
+        run: echo "tag=${{ github.sha }}-${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker Image
+        run: docker build -t ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tag }} .
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tag }}
+          format: 'table'
+          exit-code: '1' # Fails build if vulnerabilities are found
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUBTOKEN }}
+
+      - name: Push to GHCR
+        run: docker push ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tag }}
+
+  update-manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Update Deployment YAML
+        run: |
+          # Use the tag passed from the build job
+          TAG="${{ needs.build-and-push.outputs.image_tag }}"
+          
+          # Update the file
+          sed -i "s|image: .*|image: ghcr.io/${{ github.repository }}:$TAG|g" k8s/deployment.yaml
+          
+          # Configure Git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Only commit if there are changes
+          if [[ -n $(git status -s) ]]; then
+            git add k8s/deployment.yaml
+            # [skip ci] prevents the infinite loop!
+            git commit -m "Update image to $TAG [skip ci]"
+            git push
+          else
+            echo "No changes detected, skipping push."
+          fi
