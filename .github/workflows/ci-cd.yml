@@ -44,7 +44,11 @@ jobs:
         run: echo "tag=${{ github.sha }}-${{ github.run_id }}" >> $GITHUB_OUTPUT
 
       - name: Build Docker Image
-        run: docker build -t ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tag }} .
+        run: |
+            # Force the repo name to lowercase and store in a variable
+            REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            TAG="${{ steps.meta.outputs.tag }}"
+            docker build -t ghcr.io/$REPO_LOWER:$TAG .
 
       - name: Trivy Vulnerability Scan
         uses: aquasecurity/trivy-action@master
