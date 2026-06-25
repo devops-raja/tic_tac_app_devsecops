@@ -53,3 +53,5 @@ spec:
         - containerPort: 80
           name: tictac
       restartPolicy: Always
+      imagePullSecrets:
+      - name: ghcr-secret # This tells K8s to use the secret we just made
